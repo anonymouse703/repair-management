@@ -19,6 +19,8 @@ class JobOrdersTable
 {
     public static function configure(Table $table): Table
     {
+        $userTimezone = getModelTimezone(auth()->user());
+        
         return $table
             ->defaultSort('created_at', 'desc')
 
@@ -94,7 +96,13 @@ class JobOrdersTable
                 TextColumn::make('received_at')
                     ->label('Received')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(fn ($state) => $state
+                            ? $state
+                                ->timezone($userTimezone)
+                                 ->format('F j, Y g:i A')
+                            : null
+                    ),
             ])
 
             ->filters([

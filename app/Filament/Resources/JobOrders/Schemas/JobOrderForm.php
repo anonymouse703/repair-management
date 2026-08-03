@@ -28,7 +28,8 @@ class JobOrderForm
                     ->afterStateUpdated(function (Set $set) {
                         $set('device_id', null);
                     })
-                    ->required(),
+                    ->required()
+                    ->columnSpanFull(),
 
                 Select::make('device_id')
                     ->label('Device')
@@ -59,6 +60,7 @@ class JobOrderForm
 
                 DatePicker::make('received_at')
                     ->default(now())
+                    ->dateTime()
                     ->live()
                     ->afterStateUpdated(function (Get $get, Set $set, $state) {
                         if ($get('scheduled_at') && $get('scheduled_at') < $state) {
@@ -74,10 +76,6 @@ class JobOrderForm
                     ->label('Scheduled at')
                     ->minDate(fn (Get $get) => $get('received_at'))
                     ->live(),
-
-                DatePicker::make('completed_at')
-                    ->label('Completed at')
-                    ->minDate(fn (Get $get) => $get('scheduled_at') ?: $get('received_at')),
 
                 TextInput::make('estimate_total')
                     ->required()

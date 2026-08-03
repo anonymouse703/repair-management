@@ -12,19 +12,29 @@ class PaymentsTable
 {
     public static function configure(Table $table): Table
     {
+        $userTimezone = getModelTimezone(auth()->user());
+
         return $table
             ->columns([
-                TextColumn::make('jobOrder.id')
+                TextColumn::make('jobOrder.reference_number')
                     ->label('Job order'),
 
                 TextColumn::make('amount')
-                    ->prefix('$'),
+                    ->prefix('₱')
+                    ->formatStateUsing(fn ($state) => $state ? number_format((float) $state, 2) : null),
 
                 TextColumn::make('method')
                     ->sortable(),
 
                 TextColumn::make('paid_at')
-                    ->dateTime(),
+                    ->label('Paid at')
+                    ->sortable()
+                    ->formatStateUsing(fn ($state) => $state
+                            ? $state
+                                ->timezone($userTimezone)
+                                 ->format('F j, Y g:i A')
+                            : null
+                    ),
             ])
             ->filters([
                 //
@@ -34,7 +44,7 @@ class PaymentsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    // DeleteBulkAction::make(),
                 ]),
             ]);
     }

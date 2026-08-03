@@ -98,4 +98,9 @@ class JobOrder extends Model
     {
         return $this->paid_total == 0;
     }
+
+    public function releaseLogs(): HasMany
+    {
+        return $this->hasMany(JobOrderReleaseLog::class);
+    }
 }

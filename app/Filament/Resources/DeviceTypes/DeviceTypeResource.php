@@ -18,7 +18,7 @@ class DeviceTypeResource extends Resource
 {
     protected static ?string $model = DeviceType::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::ArchiveBoxXMark;
 
     protected static ?string $recordTitleAttribute = 'name';
 

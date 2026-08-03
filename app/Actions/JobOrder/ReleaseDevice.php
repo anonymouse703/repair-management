@@ -4,29 +4,36 @@ namespace App\Actions\JobOrder;
 
 use App\Enums\JobOrder\Status;
 use App\Models\JobOrder;
+use App\Models\JobOrderReleaseLog;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use DomainException;
 
 class ReleaseDevice
 {
-    public function handle(JobOrder $jobOrder): void
-    {
-        if ($jobOrder->status !== Status::ReadyForPickup) {
-            throw new DomainException(
-                'Only job orders ready for pickup can be released.'
-            );
-        }
+    public function handle(
+        JobOrder $jobOrder,
+        User $releasedBy,
+        ?string $reason = null,
+    ): void {
 
-        DB::transaction(function () use ($jobOrder) {
+        DB::transaction(function () use (
+            $jobOrder,
+            $releasedBy,
+            $reason,
+        ) {
+
+            JobOrderReleaseLog::create([
+                'job_order_id' => $jobOrder->id,
+                'released_by' => $releasedBy->id,
+                'balance_at_release' => $jobOrder->balanceDue(),
+                'reason' => $reason,
+                'released_at' => now(),
+            ]);
+
             $jobOrder->update([
                 'status' => Status::Released,
                 'released_at' => now(),
             ]);
-
-            // Optional:
-            // $jobOrder->device?->update([
-            //     'status' => DeviceStatus::Active,
-            // ]);
         });
     }
 }

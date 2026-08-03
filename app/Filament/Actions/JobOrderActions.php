@@ -5,8 +5,8 @@ namespace App\Filament\Actions;
 use App\Actions\JobOrder\CancelJobOrder;
 use App\Actions\JobOrder\ReadyForPickup;
 use App\Actions\JobOrder\ReleaseDevice;
-use App\Actions\JobOrder\RequestApproval;
 use App\Actions\JobOrder\ReopenJobOrder;
+use App\Actions\JobOrder\RequestApproval;
 use App\Actions\JobOrder\StartDiagnosis;
 use App\Actions\JobOrder\StartRepair;
 use App\Actions\JobOrder\StartTesting;
@@ -16,6 +16,12 @@ use App\Models\JobOrder;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
+use Illuminate\Support\HtmlString;
 
 class JobOrderActions
 {
@@ -31,12 +37,7 @@ class JobOrderActions
                 ->color('warning')
                 ->visible(fn (JobOrder $record) => $record->status === Status::Received)
                 ->requiresConfirmation()
-                ->action(function (
-                    JobOrder $record,
-                    StartDiagnosis $action,
-                ) {
-                    $action->handle($record);
-                }),
+                ->action(fn (JobOrder $record) => app(StartDiagnosis::class)->handle($record)),
 
             Action::make('requestApproval')
                 ->label('Waiting for Approval')
@@ -44,12 +45,7 @@ class JobOrderActions
                 ->color('info')
                 ->visible(fn (JobOrder $record) => $record->status === Status::Diagnosing)
                 ->requiresConfirmation()
-                ->action(function (
-                    JobOrder $record,
-                    RequestApproval $action,
-                ) {
-                    $action->handle($record);
-                }),
+                ->action(fn (JobOrder $record) => app(RequestApproval::class)->handle($record)),
 
             Action::make('waitingParts')
                 ->label('Waiting for Parts')
@@ -64,12 +60,7 @@ class JobOrderActions
                     true,
                 ))
                 ->requiresConfirmation()
-                ->action(function (
-                    JobOrder $record,
-                    WaitForParts $action,
-                ) {
-                    $action->handle($record);
-                }),
+                ->action(fn (JobOrder $record) => app(WaitForParts::class)->handle($record)),
 
             Action::make('startRepair')
                 ->label('Start Repair')
@@ -85,12 +76,7 @@ class JobOrderActions
                     true,
                 ))
                 ->requiresConfirmation()
-                ->action(function (
-                    JobOrder $record,
-                    StartRepair $action,
-                ) {
-                    $action->handle($record);
-                }),
+                ->action(fn (JobOrder $record) => app(StartRepair::class)->handle($record)),
 
             Action::make('startTesting')
                 ->label('Start Testing')
@@ -98,12 +84,7 @@ class JobOrderActions
                 ->color('warning')
                 ->visible(fn (JobOrder $record) => $record->status === Status::Repairing)
                 ->requiresConfirmation()
-                ->action(function (
-                    JobOrder $record,
-                    StartTesting $action,
-                ) {
-                    $action->handle($record);
-                }),
+                ->action(fn (JobOrder $record) => app(StartTesting::class)->handle($record)),
 
             Action::make('readyForPickup')
                 ->label('Ready for Pickup')
@@ -111,31 +92,44 @@ class JobOrderActions
                 ->color('success')
                 ->visible(fn (JobOrder $record) => $record->status === Status::Testing)
                 ->requiresConfirmation()
-                ->action(function (
-                    JobOrder $record,
-                    ReadyForPickup $action,
-                ) {
-                    $action->handle($record);
-                }),
+                ->action(fn (JobOrder $record) => app(ReadyForPickup::class)->handle($record)),
 
             Action::make('releaseDevice')
                 ->label('Release Device')
                 ->icon('heroicon-o-hand-thumb-up')
                 ->color('success')
-                ->visible(fn (JobOrder $record) => $record->status === Status::ReadyForPickup)
                 ->requiresConfirmation()
-                ->modalHeading('Release Device')
-                ->modalDescription(fn (JobOrder $record) => $record->balanceDue() > 0
-                    ? 'Warning! This job still has an outstanding balance of ₱'
-                        . number_format($record->balanceDue(), 2)
-                        . '. Are you sure you want to release the device?'
-                    : 'Are you sure you want to release this device?')
-                ->action(function (
-                    JobOrder $record,
-                    ReleaseDevice $action,
-                ) {
-                    $action->handle($record);
-                }),
+                ->schema([
+
+                    Section::make('Payment Summary')
+                        ->visible(fn (JobOrder $record) => ! $record->isFullyPaid())
+                        ->schema([
+                            TextInput::make('estimate')
+                                ->label('Estimated Total')
+                                ->default(fn (JobOrder $record) => '₱' . \number_format((float) $record->estimate_total, 2))
+                                ->disabled()
+                                ->dehydrated(false),
+
+                            TextInput::make('paid')
+                                ->label('Paid')
+                                ->default(fn (JobOrder $record) => '₱' . \number_format((float) $record->paid_total, 2))
+                                ->disabled()
+                                ->dehydrated(false),
+
+                            TextInput::make('balance')
+                                ->label('Outstanding Balance')
+                                ->default(fn (JobOrder $record) => '₱' . \number_format($record->balanceDue(), 2))
+                                ->disabled()
+                                ->dehydrated(false),
+                        ]),
+
+                    Textarea::make('reason')
+                        ->label('Reason for releasing with outstanding balance')
+                        ->rows(4)
+                        ->visible(fn (JobOrder $record) => ! $record->isFullyPaid())
+                        ->required(fn (JobOrder $record) => ! $record->isFullyPaid()),
+
+                ]),
 
             Action::make('cancel')
                 ->label('Cancel Job')
@@ -150,12 +144,9 @@ class JobOrderActions
                     true,
                 ))
                 ->requiresConfirmation()
-                ->action(function (
-                    JobOrder $record,
-                    CancelJobOrder $action,
-                ) {
-                    $action->handle($record);
-                }),
+                ->modalHeading('Cancel Job Order')
+                ->modalDescription('Are you sure you want to cancel this job order?')
+                ->action(fn (JobOrder $record) => app(CancelJobOrder::class)->handle($record)),
 
             Action::make('reopen')
                 ->label('Reopen Job')
@@ -163,12 +154,7 @@ class JobOrderActions
                 ->color('primary')
                 ->visible(fn (JobOrder $record) => $record->status === Status::Cancelled)
                 ->requiresConfirmation()
-                ->action(function (
-                    JobOrder $record,
-                    ReopenJobOrder $action,
-                ) {
-                    $action->handle($record);
-                }),
+                ->action(fn (JobOrder $record) => app(ReopenJobOrder::class)->handle($record)),
 
         ]);
     }
