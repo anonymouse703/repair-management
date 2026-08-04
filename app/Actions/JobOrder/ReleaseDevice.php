@@ -15,6 +15,9 @@ class ReleaseDevice
         User $releasedBy,
         ?string $reason = null,
     ): void {
+        if ($jobOrder->status !== Status::ReadyForPickup) {
+            throw new \DomainException('Job order must be ready for pickup before release.');
+        }
 
         DB::transaction(function () use (
             $jobOrder,

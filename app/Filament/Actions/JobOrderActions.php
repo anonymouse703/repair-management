@@ -2,6 +2,7 @@
 
 namespace App\Filament\Actions;
 
+use App\Actions\Inventory\UseInventoryForJobOrder;
 use App\Actions\JobOrder\CancelJobOrder;
 use App\Actions\JobOrder\ReadyForPickup;
 use App\Actions\JobOrder\ReleaseDevice;
@@ -11,17 +12,19 @@ use App\Actions\JobOrder\StartDiagnosis;
 use App\Actions\JobOrder\StartRepair;
 use App\Actions\JobOrder\StartTesting;
 use App\Actions\JobOrder\WaitForParts;
+use App\Actions\Payment\RecordPayment;
+use App\Enums\Inventory\Category;
 use App\Enums\JobOrder\Status;
+use App\Enums\Payment\Method;
+use App\Models\InventoryItem;
 use App\Models\JobOrder;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
-use Illuminate\Support\HtmlString;
 
 class JobOrderActions
 {
@@ -77,7 +80,60 @@ class JobOrderActions
                 ))
                 ->requiresConfirmation()
                 ->action(fn (JobOrder $record) => app(StartRepair::class)->handle($record)),
+            Action::make('addParts')
+                ->label('Add Parts')
+                ->icon('heroicon-o-wrench')
+                ->color('warning')
+                ->visible(fn (JobOrder $record) => in_array(
+                    $record->status,
+                    [
+                        Status::Repairing,
+                        Status::WaitingParts,
+                    ],
+                    true,
+                ))
+                ->schema([
 
+                    Select::make('inventory_item_id')
+                        ->options(function () {
+                            return InventoryItem::query()
+                                ->where('active', true)
+                                ->where('quantity', '>', 0)
+                                ->where('category', Category::Consumable)
+                                ->orderBy('name')
+                                ->get()
+                                ->mapWithKeys(fn (InventoryItem $item) => [
+                                    $item->id => sprintf(
+                                        '%s (%d %s available)',
+                                        $item->name,
+                                        $item->quantity,
+                                        $item->unit->value,
+                                    ),
+                                ]);
+                        }),
+
+                    TextInput::make('quantity')
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->default(1)
+                        ->required(),
+
+                    Textarea::make('notes')
+                        ->rows(3),
+
+                ])
+                ->action(function (JobOrder $record, array $data) {
+
+                    app(UseInventoryForJobOrder::class)->handle(
+                        jobOrder: $record,
+                        item: InventoryItem::findOrFail($data['inventory_item_id']),
+                        quantity: (int) $data['quantity'],
+                        notes: $data['notes'] ?? null,
+                    );
+
+                })
+                ->successNotificationTitle('Part added successfully.'),
             Action::make('startTesting')
                 ->label('Start Testing')
                 ->icon('heroicon-o-beaker')
@@ -98,6 +154,7 @@ class JobOrderActions
                 ->label('Release Device')
                 ->icon('heroicon-o-hand-thumb-up')
                 ->color('success')
+                ->visible(fn (JobOrder $record) => $record->status === Status::ReadyForPickup)
                 ->requiresConfirmation()
                 ->schema([
 
@@ -106,19 +163,19 @@ class JobOrderActions
                         ->schema([
                             TextInput::make('estimate')
                                 ->label('Estimated Total')
-                                ->default(fn (JobOrder $record) => '₱' . \number_format((float) $record->estimate_total, 2))
+                                ->default(fn (JobOrder $record) => '₱'.\number_format((float) $record->estimate_total, 2))
                                 ->disabled()
                                 ->dehydrated(false),
 
                             TextInput::make('paid')
                                 ->label('Paid')
-                                ->default(fn (JobOrder $record) => '₱' . \number_format((float) $record->paid_total, 2))
+                                ->default(fn (JobOrder $record) => '₱'.\number_format((float) $record->paid_total, 2))
                                 ->disabled()
                                 ->dehydrated(false),
 
                             TextInput::make('balance')
                                 ->label('Outstanding Balance')
-                                ->default(fn (JobOrder $record) => '₱' . \number_format($record->balanceDue(), 2))
+                                ->default(fn (JobOrder $record) => '₱'.\number_format($record->balanceDue(), 2))
                                 ->disabled()
                                 ->dehydrated(false),
                         ]),
@@ -129,7 +186,48 @@ class JobOrderActions
                         ->visible(fn (JobOrder $record) => ! $record->isFullyPaid())
                         ->required(fn (JobOrder $record) => ! $record->isFullyPaid()),
 
-                ]),
+                ])
+                ->action(function (JobOrder $record, array $data) {
+                    app(ReleaseDevice::class)->handle(
+                        $record,
+                        auth()->user(),
+                        $data['reason'] ?? null,
+                    );
+                }),
+
+            Action::make('recordPayment')
+                ->label('Record Payment')
+                ->icon('heroicon-o-currency-dollar')
+                ->color('success')
+                ->visible(fn (JobOrder $record) => $record->status === Status::ReadyForPickup && ! $record->isFullyPaid())
+                ->schema([
+                    TextInput::make('amount')
+                        ->label('Amount')
+                        ->numeric()
+                        ->default(fn (JobOrder $record) => $record->balanceDue())
+                        ->minValue(0.01)
+                        ->required(),
+
+                    Select::make('method')
+                        ->options(Method::array())
+                        ->required(),
+
+                    TextInput::make('reference')
+                        ->label('Reference')
+                        ->maxLength(255),
+
+                    Textarea::make('notes')
+                        ->rows(3),
+                ])
+                ->action(function (JobOrder $record, array $data) {
+                    app(RecordPayment::class)->handle(
+                        $record,
+                        (float) $data['amount'],
+                        $data['method'],
+                        $data['reference'] ?? null,
+                        $data['notes'] ?? null,
+                    );
+                }),
 
             Action::make('cancel')
                 ->label('Cancel Job')

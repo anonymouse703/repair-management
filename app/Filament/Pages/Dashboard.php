@@ -6,6 +6,7 @@ use App\Filament\Widgets\ActiveRepairsTable;
 use App\Filament\Widgets\CustomerOverview;
 use App\Filament\Widgets\DeviceBrandChart;
 use App\Filament\Widgets\DeviceOverview;
+use App\Filament\Widgets\InventoryOverview;
 use App\Filament\Widgets\JobOrderOverview;
 use App\Filament\Widgets\JobOrderTrendChart;
 use App\Filament\Widgets\JobStatusChart;
@@ -18,14 +19,13 @@ use App\Filament\Widgets\RecentPayments;
 use App\Filament\Widgets\RevenueChart;
 use App\Filament\Widgets\RevenueOverview;
 use App\Filament\Widgets\ServicePopularityChart;
-use App\Filament\Widgets\TechnicianOverview;
 use App\Filament\Widgets\WaitingForPartsTable;
 use App\Filament\Widgets\WorkshopOverview;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
 {
-    public function getColumns(): int | array
+    public function getColumns(): int|array
     {
         return 2;
     }
@@ -35,10 +35,10 @@ class Dashboard extends BaseDashboard
         return [
             JobOrderOverview::class,
             RevenueOverview::class,
+            InventoryOverview::class,
             WorkshopOverview::class,
             CustomerOverview::class,
             DeviceOverview::class,
-            TechnicianOverview::class,
             RevenueChart::class,
             JobOrderTrendChart::class,
             JobStatusChart::class,
@@ -54,5 +54,4 @@ class Dashboard extends BaseDashboard
             OverdueJobOrdersTable::class,
         ];
     }
-    
 }

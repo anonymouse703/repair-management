@@ -4,69 +4,88 @@ namespace App\Filament\Widgets;
 
 use App\Enums\JobOrder\Status;
 use App\Models\JobOrder;
-use Filament\Actions\BulkActionGroup;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
-use Illuminate\Database\Eloquent\Builder;
 
 class WaitingForPartsTable extends TableWidget
 {
     protected static ?string $heading = 'Waiting for Parts';
 
+    protected int|string|array $columnSpan = 'full';
+
     public function table(Table $table): Table
     {
         return $table
-            ->query(function (): Builder {
-                /** @var Builder $query */
-                $query = JobOrder::query()
-                    ->with(['customer', 'device.brand', 'technician'])
+            ->query(function () {
+                return JobOrder::query()
+                    ->with([
+                        'customer',
+                        'device.brand',
+                        'technician',
+                    ])
                     ->where('status', Status::WaitingParts)
                     ->latest('received_at');
-
-                return $query;
             })
+
             ->columns([
+
                 TextColumn::make('reference_number')
-                    ->label('Reference #')
-                    ->searchable(),
+                    ->label('JO #')
+                    ->weight('bold')
+                    ->copyable()
+                    ->searchable()
+                    ->sortable(),
 
                 TextColumn::make('customer.name')
                     ->label('Customer')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
-                TextColumn::make('device.brand.name')
-                    ->label('Brand'),
-
-                TextColumn::make('device.model')
-                    ->label('Model'),
+                TextColumn::make('device_display')
+                    ->label('Device')
+                    ->state(fn (JobOrder $record) => sprintf(
+                        '%s %s',
+                        $record->device->brand->name,
+                        $record->device->model,
+                    ))
+                    ->searchable([
+                        'devices.model',
+                    ]),
 
                 TextColumn::make('technician.name')
-                    ->label('Technician'),
+                    ->label('Technician')
+                    ->placeholder('Unassigned')
+                    ->sortable(),
+
+                TextColumn::make('inventory_usages_count')
+                    ->label('Parts Used')
+                    ->counts('inventoryUsages')
+                    ->badge()
+                    ->color('warning'),
 
                 TextColumn::make('status')
-                    ->badge(),
+                    ->badge()
+                    ->sortable(),
 
                 TextColumn::make('received_at')
-                    ->label('Received')
-                    ->dateTime('M d, Y h:i A')
+                    ->label('Waiting Since')
+                    ->since()
+                    ->tooltip(fn (JobOrder $record) => optional($record->received_at)
+                        ?->format('M d, Y h:i A'))
                     ->sortable(),
+
             ])
-            ->filters([
-                //
-            ])
-            ->headerActions([
-                //
-            ])
+
             ->recordActions([
-                //
+
+                ViewAction::make(),
+
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    //
-                ]),
-            ])
+
             ->defaultPaginationPageOption(10)
+
             ->paginated([10]);
     }
 }

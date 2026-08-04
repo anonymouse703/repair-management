@@ -35,13 +35,13 @@ enum Status: string implements HasLabel, HasColor
         };
     }
 
-    public function getColor(): string|array|null
+    public function getColor(): string
     {
         return match ($this) {
             self::Received => 'gray',
             self::Diagnosing => 'warning',
             self::WaitingApproval => 'info',
-            self::WaitingParts => 'gray',
+            self::WaitingParts => 'danger',
             self::Repairing => 'primary',
             self::Testing => 'warning',
             self::ReadyForPickup => 'success',

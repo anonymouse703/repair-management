@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('reference_number')->unique()->index();
             $table->foreignId('customer_id')->constrained('customers')->cascadeOnDelete();
             $table->foreignId('device_id')->constrained('devices')->cascadeOnDelete();
-            $table->foreignId('technician_id')->nullable()->constrained('technicians')->nullOnDelete();
+            $table->foreignId('technician_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('status');
             $table->timestamp('received_at')->nullable();
             $table->timestamp('scheduled_at')->nullable();

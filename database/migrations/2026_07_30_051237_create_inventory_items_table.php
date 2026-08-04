@@ -10,13 +10,16 @@ return new class extends Migration
     {
         Schema::create('inventory_items', function (Blueprint $table) {
             $table->id();
+
             $table->string('name');
             $table->string('sku')->unique();
+            $table->string('category');
+            $table->string('unit')->default('pcs');
             $table->integer('quantity')->default(0);
+            $table->integer('reorder_level')->default(0);
             $table->decimal('cost', 12, 2)->default(0);
             $table->decimal('price', 12, 2)->default(0);
             $table->string('location')->nullable();
-            $table->integer('reorder_level')->default(0);
             $table->boolean('active')->default(true);
             $table->text('notes')->nullable();
             $table->timestamps();

@@ -4,8 +4,8 @@ namespace App\Actions\Payment;
 
 use App\Models\JobOrder;
 use App\Models\Payment;
-use Illuminate\Support\Facades\DB;
 use DomainException;
+use Illuminate\Support\Facades\DB;
 
 class RecordPayment
 {
@@ -35,12 +35,8 @@ class RecordPayment
                 'paid_at' => now(),
             ]);
 
-            $jobOrder->update([
+            $jobOrder->updateQuietly([
                 'paid_total' => $jobOrder->payments()->sum('amount'),
-                'balance_due' => max(
-                    0,
-                    $jobOrder->estimate_total - $jobOrder->payments()->sum('amount')
-                ),
             ]);
 
             return $payment;

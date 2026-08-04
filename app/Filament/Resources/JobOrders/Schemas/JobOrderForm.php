@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\JobOrders\Schemas;
 
 use App\Enums\Device\Status;
+use App\Enums\User\Role;
 use App\Models\Device;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -55,8 +56,18 @@ class JobOrderForm
                     ->disabled(fn (Get $get) => blank($get('customer_id'))),
 
                 Select::make('technician_id')
-                    ->relationship('technician', 'name')
-                    ->label('Technician'),
+                    ->label('Assigned Technician')
+                    ->relationship(
+                        name: 'technician',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn (Builder $query) => $query
+                            ->where('role', Role::Technician)
+                            ->where('is_active', true)
+                            ->orderBy('name'),
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Assign later'),
 
                 DatePicker::make('received_at')
                     ->default(now())

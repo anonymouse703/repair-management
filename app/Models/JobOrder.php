@@ -12,10 +12,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JobOrder extends Model
 {
-    use HasFactory;
     use GeneratesReferenceNumber;
+    use HasFactory;
 
     public const REFERENCE_PREFIX = 'JO';
+
     public const REFERENCE_DIGITS = 6;
 
     protected $fillable = [
@@ -65,7 +66,7 @@ class JobOrder extends Model
 
     public function technician(): BelongsTo
     {
-        return $this->belongsTo(Technician::class);
+        return $this->belongsTo(User::class, 'technician_id');
     }
 
     public function services(): BelongsToMany
@@ -103,4 +104,23 @@ class JobOrder extends Model
     {
         return $this->hasMany(JobOrderReleaseLog::class);
     }
+
+    public function inventoryItems(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            InventoryItem::class,
+            'job_order_inventories'
+        )
+            ->withPivot([
+                'quantity',
+                'cost_at_time',
+            ])
+            ->withTimestamps();
+    }
+
+    public function inventoryUsages()
+    {
+        return $this->hasMany(JobOrderInventory::class);
+    }
+
 }

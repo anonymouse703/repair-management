@@ -5,7 +5,7 @@ namespace App\Filament\Resources\InventoryItems\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\BooleanColumn;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -28,7 +28,7 @@ class InventoryItemsTable
                 TextColumn::make('price')
                     ->money('USD'),
 
-                BooleanColumn::make('active')
+                IconColumn::make('active')
                     ->label('Active'),
             ])
             ->filters([
@@ -39,7 +39,7 @@ class InventoryItemsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    // DeleteBulkAction::make(),
                 ]),
             ]);
     }

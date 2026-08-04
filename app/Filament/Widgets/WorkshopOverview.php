@@ -3,8 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\JobOrder\Status;
+use App\Enums\User\Role;
 use App\Models\JobOrder;
-use App\Models\Technician;
+use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -15,11 +16,12 @@ class WorkshopOverview extends StatsOverviewWidget
     protected function getStats(): array
     {
         return [
+
             Stat::make(
                 'Active Repairs',
                 JobOrder::where('status', Status::Repairing)->count()
             )
-                ->description('Currently being repaired')
+                ->description('Currently under repair')
                 ->descriptionIcon('heroicon-m-wrench-screwdriver')
                 ->color('primary'),
 
@@ -27,7 +29,7 @@ class WorkshopOverview extends StatsOverviewWidget
                 'Waiting for Parts',
                 JobOrder::where('status', Status::WaitingParts)->count()
             )
-                ->description('Awaiting replacement parts')
+                ->description('Awaiting inventory')
                 ->descriptionIcon('heroicon-m-cube')
                 ->color('warning'),
 
@@ -40,12 +42,13 @@ class WorkshopOverview extends StatsOverviewWidget
                 ->color('info'),
 
             Stat::make(
-                'Available Technicians',
-                Technician::count()
+                'Technicians',
+                User::where('role', Role::Technician)->count()
             )
                 ->description('Registered technicians')
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color('success'),
+
         ];
     }
 }
