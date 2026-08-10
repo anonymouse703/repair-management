@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Inventory\Category;
 use App\Enums\Inventory\Unit;
+use App\Models\Traits\GeneratesReferenceNumber;
 use DomainException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class InventoryItem extends Model
 {
     use HasFactory;
+    use GeneratesReferenceNumber;
+
+    public const REFERENCE_PREFIX = 'SKU';
+
+    public const REFERENCE_COLUMN = 'sku';
+
+    public const REFERENCE_DIGITS = 6;
 
     protected $fillable = [
 

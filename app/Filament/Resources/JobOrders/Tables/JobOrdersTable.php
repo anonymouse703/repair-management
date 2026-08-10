@@ -57,7 +57,7 @@ class JobOrdersTable
                 TextColumn::make('status')
                     ->badge()
                     ->sortable()
-                    ->color(fn ($state) => $state->color()),
+                    ->color(fn ($state) => $state->getColor()),
 
                 TextColumn::make('payment_status')
                     ->label('Payment')

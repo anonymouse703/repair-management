@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\Service\Category;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -15,22 +14,27 @@ class Service extends Model
         'name',
         'description',
         'price',
-        'cost',
-        'category',
         'active',
     ];
 
     protected $casts = [
-        'active' => 'boolean',
         'price' => 'decimal:2',
-        'cost' => 'decimal:2',
-        'category' => Category::class,
+        'active' => 'boolean',
     ];
-
     public function jobOrders(): BelongsToMany
     {
-        return $this->belongsToMany(JobOrder::class)
-            ->withPivot(['quantity', 'price'])
+        return $this->belongsToMany(
+            JobOrder::class,
+            'job_order_services'
+        )
+            ->withPivot([
+                'quantity',
+                'price',
+            ])
             ->withTimestamps();
+    }
+    public function isActive(): bool
+    {
+        return $this->active;
     }
 }

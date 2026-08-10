@@ -42,11 +42,10 @@ class InventoryUsagesRelationManager extends RelationManager
                     ->money('PHP')
                     ->sortable(),
 
-                TextColumn::make('usedBy.name')
-                    ->label('Added By')
+                TextColumn::make('technician.name')
+                    ->label('Technician')
                     ->placeholder('-')
                     ->sortable(),
-
                 TextColumn::make('notes')
                     ->wrap()
                     ->toggleable(),

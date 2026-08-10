@@ -14,16 +14,16 @@ return new class extends Migration
         Schema::create('job_order_inventories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('job_order_id')
-                ->constrained()
+                ->constrained('job_orders')
                 ->cascadeOnDelete();
             $table->foreignId('inventory_item_id')
-                ->constrained()
-                ->cascadeOnDelete();
+                ->constrained('inventory_items')
+                ->restrictOnDelete();
             $table->foreignId('technician_id')
                 ->nullable()
-                ->constrained()
+                ->constrained('users')
                 ->nullOnDelete();
-            $table->unsignedInteger('quantity');
+            $table->integer('quantity');
             $table->decimal('cost_at_time', 12, 2);
             $table->decimal('price_at_time', 12, 2);
             $table->text('notes')->nullable();

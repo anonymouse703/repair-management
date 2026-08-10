@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Filament\Resources\Services\Tables;
+
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+
+class ServicesTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('name')
+                    ->searchable(),
+                TextColumn::make('price')
+                    ->label('Selling Price')
+                    ->money('PHP')
+                    ->sortable(),
+
+                TextColumn::make('cost')
+                    ->label('Unit Cost')
+                    ->money('PHP')
+                    ->sortable(),
+                TextColumn::make('category')
+                    ->badge()
+                    ->searchable(),
+                IconColumn::make('active')
+                    ->boolean(),
+                TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                //
+            ])
+            ->recordActions([
+                ActionGroup::make([
+                    // ViewAction::make(),
+                    EditAction::make(),
+                    Action::make('toggleStatus')
+                        ->label(fn ($record) => $record->active ? 'Set Inactive' : 'Set Active')
+                        ->icon(fn ($record) => $record->active ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                        ->color(fn ($record) => $record->active ? 'danger' : 'success')
+                        ->requiresConfirmation()
+                        ->modalHeading(fn ($record) => $record->active ? 'Set as Inactive?' : 'Set as Active?')
+                        ->modalDescription(fn ($record) => $record->active 
+                            ? 'This will deactivate the record.' 
+                            : 'This will activate the record.')
+                        ->action(function ($record) {
+                            $record->update(['active' => !$record->active]);
+                        }),
+                ]),
+            ])
+            ->toolbarActions([
+                // BulkActionGroup::make([
+                //     DeleteBulkAction::make(),
+                // ]),
+            ]);
+    }
+}

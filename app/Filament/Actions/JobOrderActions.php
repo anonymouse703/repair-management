@@ -95,6 +95,7 @@ class JobOrderActions
                 ->schema([
 
                     Select::make('inventory_item_id')
+                        ->searchable()
                         ->options(function () {
                             return InventoryItem::query()
                                 ->where('active', true)
@@ -254,6 +255,15 @@ class JobOrderActions
                 ->requiresConfirmation()
                 ->action(fn (JobOrder $record) => app(ReopenJobOrder::class)->handle($record)),
 
+
+            Action::make('printReceipt')
+                ->label('Print JO')
+                ->icon('heroicon-o-printer')
+                ->url(fn (JobOrder $record) => route(
+                    'job-orders.receipt',
+                    ['jobOrder' => $record]
+                ))
+                ->openUrlInNewTab(),
         ]);
     }
 }

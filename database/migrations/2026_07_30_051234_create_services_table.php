@@ -11,11 +11,12 @@ return new class extends Migration
         Schema::create('services', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description')->nullable();
-            $table->decimal('price', 12, 2)->default(0);
-            $table->decimal('cost', 12, 2)->default(0);
-            $table->string('category')->nullable();
-            $table->boolean('active')->default(true);
+            $table->text('description')
+                ->nullable();
+            $table->decimal('price', 12, 2)
+                ->default(0);
+            $table->boolean('active')
+                ->default(true);
             $table->timestamps();
         });
     }

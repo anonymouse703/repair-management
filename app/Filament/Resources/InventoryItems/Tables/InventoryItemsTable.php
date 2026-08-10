@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\InventoryItems\Tables;
 
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -26,7 +28,7 @@ class InventoryItemsTable
                 TextColumn::make('quantity'),
 
                 TextColumn::make('price')
-                    ->money('USD'),
+                    ->money('PHP'),
 
                 IconColumn::make('active')
                     ->label('Active'),
@@ -35,7 +37,22 @@ class InventoryItemsTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                ActionGroup::make([
+                    // ViewAction::make(),
+                    EditAction::make(),
+                    Action::make('toggleStatus')
+                        ->label(fn ($record) => $record->active ? 'Set Inactive' : 'Set Active')
+                        ->icon(fn ($record) => $record->active ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                        ->color(fn ($record) => $record->active ? 'danger' : 'success')
+                        ->requiresConfirmation()
+                        ->modalHeading(fn ($record) => $record->active ? 'Set as Inactive?' : 'Set as Active?')
+                        ->modalDescription(fn ($record) => $record->active 
+                            ? 'This will deactivate the record.' 
+                            : 'This will activate the record.')
+                        ->action(function ($record) {
+                            $record->update(['active' => !$record->active]);
+                        }),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -40,19 +40,15 @@ class JobOrder extends Model
         'received_at' => 'datetime',
         'scheduled_at' => 'datetime',
         'completed_at' => 'datetime',
+        'released_at' => 'datetime',
+
         'estimate_total' => 'decimal:2',
         'paid_total' => 'decimal:2',
+
         'received_images' => 'array',
+
         'status' => Status::class,
     ];
-
-    public function balanceDue(): float
-    {
-        return max(
-            0,
-            (float) $this->estimate_total - (float) $this->paid_total
-        );
-    }
 
     public function customer(): BelongsTo
     {
@@ -63,15 +59,20 @@ class JobOrder extends Model
     {
         return $this->belongsTo(Device::class);
     }
-
     public function technician(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'technician_id');
+        return $this->belongsTo(
+            User::class,
+            'technician_id'
+        );
     }
 
     public function services(): BelongsToMany
     {
-        return $this->belongsToMany(Service::class)
+        return $this->belongsToMany(
+            Service::class,
+            'job_order_services'
+        )
             ->withPivot([
                 'quantity',
                 'price',
@@ -81,28 +82,16 @@ class JobOrder extends Model
 
     public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class);
-    }
-
-    public function isFullyPaid(): bool
-    {
-        return $this->paid_total >= $this->estimate_total;
-    }
-
-    public function isPartiallyPaid(): bool
-    {
-        return $this->paid_total > 0 &&
-            $this->paid_total < $this->estimate_total;
-    }
-
-    public function isUnpaid(): bool
-    {
-        return $this->paid_total == 0;
+        return $this->hasMany(
+            Payment::class
+        );
     }
 
     public function releaseLogs(): HasMany
     {
-        return $this->hasMany(JobOrderReleaseLog::class);
+        return $this->hasMany(
+            JobOrderReleaseLog::class
+        );
     }
 
     public function inventoryItems(): BelongsToMany
@@ -114,13 +103,58 @@ class JobOrder extends Model
             ->withPivot([
                 'quantity',
                 'cost_at_time',
+                'price_at_time',
             ])
             ->withTimestamps();
     }
 
-    public function inventoryUsages()
+    public function inventoryUsages(): HasMany
     {
-        return $this->hasMany(JobOrderInventory::class);
+        return $this->hasMany(
+            JobOrderInventory::class
+        );
     }
 
+    public function balanceDue(): float
+    {
+        return max(
+            0,
+            (float) $this->estimate_total
+            - (float) $this->paid_total
+        );
+    }
+
+    public function isFullyPaid(): bool
+    {
+        return (float) $this->paid_total
+            >= (float) $this->estimate_total;
+    }
+
+    public function isPartiallyPaid(): bool
+    {
+        return (float) $this->paid_total > 0
+            && (float) $this->paid_total
+            < (float) $this->estimate_total;
+    }
+
+    public function isUnpaid(): bool
+    {
+        return (float) $this->paid_total === 0.0;
+    }
+
+    public function servicesTotal(): float
+    {
+        return (float) $this->services
+            ->sum(function (Service $service) {
+                $quantity = (int) (
+                    $service->pivot->quantity ?? 1
+                );
+
+                $price = (float) (
+                    $service->pivot->price ?? 0
+                );
+
+                return $quantity * $price;
+            });
+    }
 }

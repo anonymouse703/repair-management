@@ -44,9 +44,12 @@ class JobOrderInventory extends Model
         return $this->belongsTo(InventoryItem::class);
     }
 
-    public function usedBy()
+    /**
+     * Technician/User who used the inventory item.
+     */
+    public function technician(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'used_by');
+        return $this->belongsTo(User::class, 'technician_id');
     }
 
     /*
