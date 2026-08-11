@@ -18,7 +18,7 @@ return new class extends Migration
             $table->enum('type', ['boolean', 'text', 'select', 'integer', 'float', 'datetime', 'json']);
             $table->text('options')->nullable();
             $table->boolean('is_readonly')->default(false);
-            $table->timestamps();
+             $table->bigInteger('created_ts');
         });
     }
 

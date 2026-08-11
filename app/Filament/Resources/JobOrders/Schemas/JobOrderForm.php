@@ -153,9 +153,9 @@ class JobOrderForm
                     )
                     ->live(),
 
-                Repeater::make('services')
+                Repeater::make('serviceUsages')
                     ->label('Services')
-                    ->relationship('services')
+                    ->relationship('serviceUsages')
                     ->schema([
 
                         Select::make('service_id')

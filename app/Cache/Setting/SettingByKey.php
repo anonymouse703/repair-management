@@ -26,8 +26,7 @@ class SettingByKey extends CacheBase
 
     protected function cacheMiss()
     {
-        // return app(SettingRepositoryInterface::class)->find($this->settingKey);
-        return app(SettingRepositoryInterface::class)->filterByKey([$this->settingKey])->get()->first();
+        return app(SettingRepositoryInterface::class)->find($this->settingKey);
     }
 
     protected function errorModelName(): string

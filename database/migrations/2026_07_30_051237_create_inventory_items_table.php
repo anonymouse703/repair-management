@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Inventory\Unit;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,7 +15,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('sku')->unique();
             $table->string('category');
-            $table->string('unit')->default('pcs');
+            $table->string('unit')->default(Unit::Piece);
             $table->integer('quantity')->default(0);
             $table->integer('reorder_level')->default(0);
             $table->decimal('cost', 12, 2)->default(0);

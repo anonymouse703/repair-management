@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Payments\Schemas;
 use App\Enums\JobOrder\Status;
 use App\Enums\Payment\Method;
 use App\Models\JobOrder;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -20,7 +19,9 @@ class PaymentForm
     {
         return $schema
             ->components([
+
                 Select::make('job_order_id')
+                    ->label('Job Order')
                     ->relationship(
                         name: 'jobOrder',
                         modifyQueryUsing: fn (Builder $query) => $query
@@ -28,42 +29,57 @@ class PaymentForm
                                 Status::ReadyForPickup,
                                 Status::Released,
                             ])
+                            ->orderByDesc('id')
                     )
-                    ->getOptionLabelFromRecordUsing(fn ($record) => sprintf(
-                        '%s • %s • %s',
-                        $record->reference_number,
-                        $record->customer->name,
-                        $record->device->model,
-                    ))
+                    ->getOptionLabelFromRecordUsing(
+                        fn (JobOrder $record) => sprintf(
+                            '%s • %s • %s',
+                            $record->reference_number,
+                            $record->customer->name,
+                            $record->device->model,
+                        )
+                    )
                     ->searchable()
                     ->preload()
                     ->required()
                     ->live()
-                    ->afterStateUpdated(function (?string $state, Set $set) {
-                        if (blank($state)) {
-                            $set('amount', null);
+                    ->afterStateUpdated(
+                        function (?string $state, Set $set) {
+                            if (blank($state)) {
+                                $set('amount', null);
 
-                            return;
+                                return;
+                            }
+
+                            $jobOrder = JobOrder::query()
+                                ->select([
+                                    'id',
+                                    'estimate_total',
+                                    'paid_total',
+                                ])
+                                ->findOrFail($state);
+
+                            $set(
+                                'amount',
+                                number_format(
+                                    $jobOrder->balanceDue(),
+                                    2,
+                                    '.',
+                                    ''
+                                )
+                            );
                         }
-
-                        $jobOrder = JobOrder::query()
-                            ->select([
-                                'id',
-                                'estimate_total',
-                                'paid_total',
-                            ])
-                            ->findOrFail($state);
-
-                        $set('amount', $jobOrder->balanceDue());
-                    }),
+                    ),
 
                 TextInput::make('amount')
+                    ->label('Amount')
                     ->required()
                     ->numeric()
                     ->prefix('₱')
-                    ->formatStateUsing(fn ($state) => $state ? number_format((float) $state, 2) : null),
+                    ->minValue(0.01),
 
                 Select::make('method')
+                    ->label('Payment Method')
                     ->options(Method::array())
                     ->required(),
 
@@ -73,11 +89,13 @@ class PaymentForm
                     ->seconds(false)
                     ->native(false)
                     ->required(),
-                    
+
                 Textarea::make('notes')
+                    ->label('Notes')
                     ->columnSpanFull()
                     ->placeholder('Optional notes about this payment')
                     ->rows(4),
+
             ]);
     }
 }

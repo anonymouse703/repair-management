@@ -2,21 +2,25 @@
 
 namespace App\Models;
 
+use App\Cache\JobOrder\JobOrderByReference;
+use App\Cache\JobOrder\JobOrdersByCustomerName;
 use App\Enums\JobOrder\Status;
 use App\Models\Traits\GeneratesReferenceNumber;
+use App\Observers\JobOrderObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy([JobOrderObserver::class])]
 class JobOrder extends Model
 {
-    use GeneratesReferenceNumber;
     use HasFactory;
+    use GeneratesReferenceNumber;
 
     public const REFERENCE_PREFIX = 'JO';
-
     public const REFERENCE_DIGITS = 6;
 
     protected $fillable = [
@@ -37,6 +41,8 @@ class JobOrder extends Model
     ];
 
     protected $casts = [
+        'status' => Status::class,
+
         'received_at' => 'datetime',
         'scheduled_at' => 'datetime',
         'completed_at' => 'datetime',
@@ -46,9 +52,13 @@ class JobOrder extends Model
         'paid_total' => 'decimal:2',
 
         'received_images' => 'array',
-
-        'status' => Status::class,
     ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function customer(): BelongsTo
     {
@@ -59,6 +69,7 @@ class JobOrder extends Model
     {
         return $this->belongsTo(Device::class);
     }
+
     public function technician(): BelongsTo
     {
         return $this->belongsTo(
@@ -80,18 +91,19 @@ class JobOrder extends Model
             ->withTimestamps();
     }
 
+    public function serviceUsages(): HasMany
+    {
+        return $this->hasMany(JobOrderService::class);
+    }
+
     public function payments(): HasMany
     {
-        return $this->hasMany(
-            Payment::class
-        );
+        return $this->hasMany(Payment::class);
     }
 
     public function releaseLogs(): HasMany
     {
-        return $this->hasMany(
-            JobOrderReleaseLog::class
-        );
+        return $this->hasMany(JobOrderReleaseLog::class);
     }
 
     public function inventoryItems(): BelongsToMany
@@ -103,24 +115,28 @@ class JobOrder extends Model
             ->withPivot([
                 'quantity',
                 'cost_at_time',
-                'price_at_time',
+                'price',
             ])
             ->withTimestamps();
     }
 
     public function inventoryUsages(): HasMany
     {
-        return $this->hasMany(
-            JobOrderInventory::class
-        );
+        return $this->hasMany(JobOrderInventory::class);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Financial Helpers
+    |--------------------------------------------------------------------------
+    */
 
     public function balanceDue(): float
     {
         return max(
             0,
             (float) $this->estimate_total
-            - (float) $this->paid_total
+                - (float) $this->paid_total
         );
     }
 
@@ -144,17 +160,24 @@ class JobOrder extends Model
 
     public function servicesTotal(): float
     {
-        return (float) $this->services
-            ->sum(function (Service $service) {
-                $quantity = (int) (
-                    $service->pivot->quantity ?? 1
-                );
+        return (float) $this->services->sum(function (Service $service) {
+            $quantity = (int) ($service->pivot->quantity ?? 1);
 
-                $price = (float) (
-                    $service->pivot->price ?? 0
-                );
+            $price = (float) ($service->pivot->price ?? 0);
 
-                return $quantity * $price;
-            });
+            return $quantity * $price;
+        });
     }
+
+    public function clearCache(): void
+    {
+        JobOrderByReference::forget($this->reference_number);
+        
+        if ($this->customer) {
+            JobOrdersByCustomerName::forget(
+                $this->customer->name
+            );
+        }
+    }
+
 }

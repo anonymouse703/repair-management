@@ -15,9 +15,20 @@ class RecordPayment
         string $method,
         ?string $reference = null,
         ?string $notes = null,
+        ?\DateTimeInterface $paidAt = null,
     ): Payment {
         if ($amount <= 0) {
-            throw new DomainException('Payment amount must be greater than zero.');
+            throw new DomainException(
+                'Payment amount must be greater than zero.'
+            );
+        }
+
+        $balance = $jobOrder->balanceDue();
+
+        if ($amount > $balance) {
+            throw new DomainException(
+                'Payment amount cannot exceed the outstanding balance.'
+            );
         }
 
         return DB::transaction(function () use (
@@ -25,14 +36,15 @@ class RecordPayment
             $amount,
             $method,
             $reference,
-            $notes
+            $notes,
+            $paidAt,
         ) {
             $payment = $jobOrder->payments()->create([
                 'amount' => $amount,
                 'method' => $method,
                 'reference' => $reference,
                 'notes' => $notes,
-                'paid_at' => now(),
+                'paid_at' => $paidAt ?? now(),
             ]);
 
             $jobOrder->updateQuietly([

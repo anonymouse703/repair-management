@@ -3,38 +3,40 @@
 namespace App\Actions\Payment;
 
 use App\Models\Payment;
-use Illuminate\Support\Facades\DB;
 use DomainException;
+use Illuminate\Support\Facades\DB;
 
 class RefundPayment
 {
     public function handle(
         Payment $payment,
         ?string $reason = null,
-    ): void {
-        if ($payment->amount < 0) {
-            throw new DomainException('Payment has already been refunded.');
+    ): Payment {
+        if ($payment->amount <= 0) {
+            throw new DomainException(
+                'This payment cannot be refunded.'
+            );
         }
 
-        DB::transaction(function () use ($payment, $reason) {
+        return DB::transaction(function () use (
+            $payment,
+            $reason,
+        ) {
+            $jobOrder = $payment->jobOrder;
 
-            $payment->jobOrder->payments()->create([
+            $refund = $jobOrder->payments()->create([
                 'amount' => -$payment->amount,
                 'method' => $payment->method,
                 'reference' => $payment->reference,
-                'notes' => 'Refund: '.$reason,
+                'notes' => 'Refund: ' . ($reason ?? 'No reason provided'),
                 'paid_at' => now(),
             ]);
 
-            $jobOrder = $payment->jobOrder;
-
-            $jobOrder->update([
+            $jobOrder->updateQuietly([
                 'paid_total' => $jobOrder->payments()->sum('amount'),
-                'balance_due' => max(
-                    0,
-                    $jobOrder->estimate_total - $jobOrder->payments()->sum('amount')
-                ),
             ]);
+
+            return $refund;
         });
     }
 }

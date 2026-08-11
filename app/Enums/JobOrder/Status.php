@@ -20,6 +20,8 @@ enum Status: string implements HasLabel, HasColor
     case Released = 'released';
     case Cancelled = 'cancelled';
 
+    case Approved = 'approved';
+
     public function getLabel(): ?string
     {
         return match ($this) {
@@ -32,6 +34,7 @@ enum Status: string implements HasLabel, HasColor
             self::ReadyForPickup => 'Ready for Pickup',
             self::Released => 'Released',
             self::Cancelled => 'Cancelled',
+            self::Approved => 'Approved',
         };
     }
 
@@ -47,6 +50,7 @@ enum Status: string implements HasLabel, HasColor
             self::ReadyForPickup => 'success',
             self::Released => 'success',
             self::Cancelled => 'danger',
+            self::Approved => 'success'
         };
     }
 }

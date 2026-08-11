@@ -11,11 +11,12 @@ class StartRepair
     public function handle(JobOrder $jobOrder): void
     {
         if (! in_array($jobOrder->status, [
-            Status::Diagnosing,
-            Status::WaitingApproval,
+            Status::Approved,
             Status::WaitingParts,
         ], true)) {
-            throw new DomainException('Job order cannot start repair.');
+            throw new DomainException(
+                'Job order must be approved before starting repair.'
+            );
         }
 
         $jobOrder->update([

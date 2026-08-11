@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Device\Status;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,7 +17,7 @@ return new class extends Migration
             $table->string('model');
             $table->string('serial_number')->nullable();
             $table->string('imei')->nullable();
-            $table->string('status')->default('active');
+            $table->string('status')->default(Status::Active);
             $table->text('notes')->nullable();
             $table->timestamps();
 
