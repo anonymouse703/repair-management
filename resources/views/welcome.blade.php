@@ -306,68 +306,91 @@
 
 
         {{-- Quick Stats --}}
-        <section class="max-w-max-width mx-auto px-margin-desktop mb-xl grid grid-cols-1 md:grid-cols-3 gap-md">
+        {{-- Quick Stats --}}
+        <section class="max-w-max-width mx-auto px-margin-desktop mb-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
 
-            {{-- Active Mobile Repairs --}}
+            {{-- Total Job Orders --}}
             <div class="glass-card p-md rounded-xl flex items-center gap-md">
 
                 <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                     <span class="material-symbols-outlined">
-                        smartphone
+                        assignment
                     </span>
                 </div>
 
                 <div>
                     <div class="font-label-md text-label-md text-on-surface-variant">
-                        Active Mobile Repairs
+                        Total Job Orders
                     </div>
 
                     <div class="font-headline-md text-headline-md text-on-surface">
-                        {{ number_format($activeMobileRepairs) }}
+                        {{ number_format($totalJobOrders) }}
                     </div>
                 </div>
 
             </div>
 
 
-            {{-- Active Laptop Repairs --}}
+            {{-- Open Job Orders --}}
             <div class="glass-card p-md rounded-xl flex items-center gap-md">
 
                 <div class="w-12 h-12 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
                     <span class="material-symbols-outlined">
-                        laptop
+                        build
                     </span>
                 </div>
 
                 <div>
                     <div class="font-label-md text-label-md text-on-surface-variant">
-                        Active Laptop Repairs
+                        Open Job Orders
                     </div>
 
                     <div class="font-headline-md text-headline-md text-on-surface">
-                        {{ number_format($activeLaptopRepairs) }}
+                        {{ number_format($openJobOrders) }}
                     </div>
                 </div>
 
             </div>
 
 
-            {{-- Active TV Repairs --}}
+            {{-- Ready for Pickup --}}
             <div class="glass-card p-md rounded-xl flex items-center gap-md">
 
-                <div class="w-12 h-12 rounded-lg bg-on-secondary-container/10 flex items-center justify-center text-on-secondary-container">
+                <div class="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center text-green-400">
                     <span class="material-symbols-outlined">
-                        tv
+                        inventory
                     </span>
                 </div>
 
                 <div>
                     <div class="font-label-md text-label-md text-on-surface-variant">
-                        Active TV Repairs
+                        Ready for Pickup
                     </div>
 
                     <div class="font-headline-md text-headline-md text-on-surface">
-                        {{ number_format($activeTvRepairs) }}
+                        {{ number_format($readyForPickup) }}
+                    </div>
+                </div>
+
+            </div>
+
+
+            {{-- Received Today --}}
+            <div class="glass-card p-md rounded-xl flex items-center gap-md">
+
+                <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+                    <span class="material-symbols-outlined">
+                        today
+                    </span>
+                </div>
+
+                <div>
+                    <div class="font-label-md text-label-md text-on-surface-variant">
+                        Received Today
+                    </div>
+
+                    <div class="font-headline-md text-headline-md text-on-surface">
+                        {{ number_format($receivedToday) }}
                     </div>
                 </div>
 
@@ -800,8 +823,7 @@
         function jobOrderCard(jobOrder) {
 
             const images = Array.isArray(jobOrder.received_images) ?
-                jobOrder.received_images :
-                [];
+                jobOrder.received_images : [];
 
 
             const image = images.length ?

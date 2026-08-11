@@ -6,8 +6,7 @@ use App\Models\JobOrder;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-
-    $activeStatuses = [
+    $openStatuses = [
         Status::Received->value,
         Status::Diagnosing->value,
         Status::WaitingApproval->value,
@@ -15,35 +14,29 @@ Route::get('/', function () {
         Status::Repairing->value,
         Status::Testing->value,
         Status::ReadyForPickup->value,
+        Status::Approved->value,
     ];
 
-    $activeRepairCounts = JobOrder::query()
-        ->whereIn('job_orders.status', $activeStatuses)
-        ->join(
-            'devices',
-            'devices.id',
-            '=',
-            'job_orders.device_id'
-        )
-        ->join(
-            'device_types',
-            'device_types.id',
-            '=',
-            'devices.device_type_id'
-        )
-        ->selectRaw('device_types.name, COUNT(*) as total')
-        ->groupBy(
-            'device_types.id',
-            'device_types.name'
-        )
-        ->pluck('total', 'name');
+    $totalJobOrders = JobOrder::query()->count();
+
+    $openJobOrders = JobOrder::query()
+        ->whereIn('status', $openStatuses)
+        ->count();
+
+    $readyForPickup = JobOrder::query()
+        ->where('status', Status::ReadyForPickup->value)
+        ->count();
+
+    $receivedToday = JobOrder::query()
+        ->whereDate('received_at', today())
+        ->count();
 
     return view('welcome', [
-        'activeMobileRepairs' => $activeRepairCounts->get('Mobile', 0),
-        'activeLaptopRepairs' => $activeRepairCounts->get('Laptop', 0),
-        'activeTvRepairs' => $activeRepairCounts->get('TV', 0),
+        'totalJobOrders' => $totalJobOrders,
+        'openJobOrders' => $openJobOrders,
+        'readyForPickup' => $readyForPickup,
+        'receivedToday' => $receivedToday,
     ]);
-
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
