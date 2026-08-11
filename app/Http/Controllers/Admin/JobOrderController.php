@@ -10,56 +10,50 @@ use App\Models\JobOrder;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class JobOrderController extends Controller
 {
-    public function search(Request $request)
+    public function search(Request $request): JsonResponse
     {
         $type = $request->string('type')->toString();
         $query = $request->string('query')->trim()->toString();
 
         if (blank($query)) {
-            return view('welcome', [
-                'type' => null,
-                'query' => null,
-                'jobOrder' => null,
-                'jobOrders' => collect(),
-                'error' => 'Search query is required.',
-            ]);
+            return response()->json([
+                'message' => $type === 'customer'
+                    ? 'Please enter a customer name.'
+                    : 'Please enter a Job Order reference number.',
+            ], 422);
         }
 
         if ($type === 'reference') {
             $jobOrder = JobOrderByReference::get($query);
 
-            return view('welcome', [
-                'type' => 'reference',
-                'query' => $query,
-                'jobOrder' => $jobOrder,
-                'jobOrders' => collect(),
-                'error' => $jobOrder ? null : 'Job Order not found.',
+            if (! $jobOrder) {
+                return response()->json([
+                    'message' => 'Job Order not found.',
+                ], 404);
+            }
+
+            return response()->json([
+                'data' => new JobOrderResource($jobOrder),
             ]);
         }
 
         if ($type === 'customer') {
             $jobOrders = JobOrdersByCustomerName::get($query);
 
-            return view('welcome', [
-                'type' => 'customer',
-                'query' => $query,
-                'jobOrder' => null,
-                'jobOrders' => $jobOrders,
-                'error' => null,
+            return response()->json([
+                'data' => JobOrderResource::collection($jobOrders),
             ]);
         }
 
-        return view('welcome', [
-            'type' => $type,
-            'query' => $query,
-            'jobOrder' => null,
-            'jobOrders' => collect(),
-            'error' => 'Invalid search type.',
-        ]);
+        return response()->json([
+            'message' => 'Invalid search type.',
+        ], 422);
     }
+
     public function receipt(JobOrder $jobOrder)
     {
         $jobOrder->load([
@@ -71,7 +65,7 @@ class JobOrderController extends Controller
             'payments',
         ]);
 
-       $settings = Setting::query()
+        $settings = Setting::query()
             ->whereIn('key', [
                 'shop_name',
                 'business_registration_name',
@@ -86,6 +80,7 @@ class JobOrderController extends Controller
                 'receipt_terms',
                 'receipt_footer',
             ])
+            ->get()
             ->pluck('value', 'key');
 
         return Pdf::loadView(

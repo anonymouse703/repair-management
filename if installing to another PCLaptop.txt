@@ -1,0 +1,7 @@
+if installing to another PC/Laptop
+
+To show image 
+
+1. remove storage link from the public
+2. Open File Explorer, open the project and above enter powershell
+3. run New-Item -ItemType Junction -Path "public\storage" -Target "storage\app\public"

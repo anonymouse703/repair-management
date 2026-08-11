@@ -5,15 +5,12 @@ use App\Http\Controllers\Admin\JobOrderController;
 use App\Models\JobOrder;
 use Illuminate\Support\Facades\Route;
 
-// Route::view('/', 'welcome')->name('home');
-
 Route::get('/', function () {
 
     $activeStatuses = [
         Status::Received->value,
         Status::Diagnosing->value,
         Status::WaitingApproval->value,
-        Status::Approved->value,
         Status::WaitingParts->value,
         Status::Repairing->value,
         Status::Testing->value,

@@ -23,6 +23,10 @@ class UserForm
                     ->label('Email address')
                     ->email()
                     ->required(),
+                TextInput::make('mobile')
+                    ->label('Mobile number'),
+                TextInput::make('address')
+                    ->label('Address'),
                 Select::make('role')
                     ->options(Role::class)
                     ->default('staff')

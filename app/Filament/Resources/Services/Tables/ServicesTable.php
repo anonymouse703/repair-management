@@ -23,14 +23,6 @@ class ServicesTable
                     ->label('Selling Price')
                     ->money('PHP')
                     ->sortable(),
-
-                TextColumn::make('cost')
-                    ->label('Unit Cost')
-                    ->money('PHP')
-                    ->sortable(),
-                TextColumn::make('category')
-                    ->badge()
-                    ->searchable(),
                 IconColumn::make('active')
                     ->boolean(),
                 TextColumn::make('created_at')

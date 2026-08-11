@@ -2,12 +2,13 @@
 
 namespace App\Filament\Resources\Customers\Tables;
 
+use App\Filament\Exports\CustomerExporter;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\BooleanColumn;
+use Filament\Actions\ExportAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -18,6 +19,11 @@ class CustomersTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->headerActions([
+                    ExportAction::make()
+                        ->exporter(CustomerExporter::class),
+                ])
+                
             ->columns([
                 TextColumn::make('name')
                     ->sortable()

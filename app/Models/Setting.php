@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use App\Enums\Setting\Type;
+use App\Enums\Setting\Scope;
+use App\Observers\SettingObserver;
 use App\Cache\Setting\SettingByKey;
 use App\Casts\TimestampAsCarbonObject;
-use App\Enums\Setting\Scope;
-use App\Enums\Setting\Type;
-use App\Models\Traits\GeneratesCreatedTs;
-use App\Observers\SettingObserver;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Attributes\ObservedBy;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\GeneratesCreatedTs;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 
 #[ObservedBy([SettingObserver::class])]
 class Setting extends Model

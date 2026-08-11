@@ -5,6 +5,7 @@ namespace App\Filament\Resources\JobOrders\Schemas;
 use App\Enums\Device\Status as DeviceStatus;
 use App\Enums\User\Role;
 use App\Models\Device;
+use App\Models\JobOrder;
 use App\Models\Service;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
@@ -42,7 +43,8 @@ class JobOrderForm
                         name: 'device',
                         modifyQueryUsing: function (
                             Builder $query,
-                            Get $get
+                            Get $get,
+                            ?JobOrder $record
                         ) {
                             $customerId = $get('customer_id');
 
@@ -58,7 +60,19 @@ class JobOrderForm
                                 )
                                 ->whereDoesntHave(
                                     'jobOrders',
-                                    function (Builder $query) {
+                                    function (Builder $query) use ($record) {
+
+                                        // Ignore the current Job Order when editing.
+                                        if ($record) {
+                                            $query->where(
+                                                'id',
+                                                '!=',
+                                                $record->id
+                                            );
+                                        }
+
+                                        // Device cannot be selected if it has
+                                        // another active Job Order.
                                         $query->whereNotIn(
                                             'status',
                                             [
@@ -68,7 +82,6 @@ class JobOrderForm
                                         );
                                     }
                                 )
-
                                 ->orderBy('model');
                         }
                     )
@@ -164,10 +177,7 @@ class JobOrderForm
                                 fn () => Service::query()
                                     ->where('active', true)
                                     ->orderBy('name')
-                                    ->pluck(
-                                        'name',
-                                        'id'
-                                    )
+                                    ->pluck('name', 'id')
                             )
                             ->searchable()
                             ->preload()
@@ -175,27 +185,33 @@ class JobOrderForm
                             ->required()
                             ->afterStateUpdated(
                                 function (
+                                    Get $get,
                                     Set $set,
                                     $state
                                 ) {
                                     if (blank($state)) {
-                                        $set(
-                                            'price',
-                                            0
+                                        $set('price', 0);
+
+                                        static::updateEstimateTotal(
+                                            $get,
+                                            $set
                                         );
 
                                         return;
                                     }
 
-                                    $service = Service::find(
-                                        $state
-                                    );
+                                    $service = Service::find($state);
 
                                     $set(
                                         'price',
                                         $service
                                             ? (float) $service->price
                                             : 0
+                                    );
+
+                                    static::updateEstimateTotal(
+                                        $get,
+                                        $set
                                     );
                                 }
                             ),
@@ -207,7 +223,11 @@ class JobOrderForm
                             ->minValue(1)
                             ->default(1)
                             ->required()
-                            ->live(),
+                            ->live()
+                            ->afterStateUpdated(
+                                fn (Get $get, Set $set) =>
+                                    static::updateEstimateTotal($get, $set)
+                            ),
 
                         TextInput::make('price')
                             ->label('Price')
@@ -215,7 +235,11 @@ class JobOrderForm
                             ->minValue(0)
                             ->prefix('₱')
                             ->required()
-                            ->live(),
+                            ->live()
+                            ->afterStateUpdated(
+                                fn (Get $get, Set $set) =>
+                                    static::updateEstimateTotal($get, $set)
+                            ),
 
                     ])
                     ->columns(3)
@@ -223,14 +247,21 @@ class JobOrderForm
                     ->addActionLabel('Add Service')
                     ->reorderable(false)
                     ->collapsible()
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->live()
+                    ->afterStateUpdated(
+                        fn (Get $get, Set $set) =>
+                            static::updateEstimateTotal($get, $set)
+                    ),
 
                 TextInput::make('estimate_total')
                     ->label('Estimated Total')
-                    ->required()
                     ->numeric()
-                    ->minValue(0)
-                    ->prefix('₱'),
+                    ->prefix('₱')
+                    ->readOnly()
+                    ->dehydrated()
+                    ->default(0)
+                    ->required(),
 
                 Textarea::make('intake_notes')
                     ->label('Intake Notes')
@@ -253,15 +284,29 @@ class JobOrderForm
                         'image/png',
                         'image/webp',
                     ])
-                    ->directory(
-                        'job-order-images'
-                    )
-                    ->visibility('private')
+                    ->directory('job-order-images')
+                    ->visibility('public')
                     ->preserveFilenames(false)
                     ->downloadable()
                     ->openable()
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
 
             ]);
+    }
+
+    protected static function updateEstimateTotal(
+        Get $get,
+        Set $set
+    ): void {
+        $services = $get('serviceUsages') ?? [];
+
+        $total = collect($services)->sum(function (array $service) {
+            $quantity = (int) ($service['quantity'] ?? 0);
+            $price = (float) ($service['price'] ?? 0);
+
+            return $quantity * $price;
+        });
+
+        $set('estimate_total', number_format($total, 2, '.', ''));
     }
 }

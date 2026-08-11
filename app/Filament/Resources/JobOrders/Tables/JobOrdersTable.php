@@ -4,8 +4,10 @@ namespace App\Filament\Resources\JobOrders\Tables;
 
 use App\Enums\JobOrder\Status;
 use App\Filament\Actions\JobOrderActions;
+use App\Filament\Exports\JobOrderExporter;
 use App\Models\JobOrder;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\ExportAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -20,6 +22,11 @@ class JobOrdersTable
 
         return $table
 
+            ->headerActions([
+                ExportAction::make()
+                    ->exporter(JobOrderExporter::class),
+            ])
+            
             ->defaultSort('created_at', 'desc')
 
             ->columns([

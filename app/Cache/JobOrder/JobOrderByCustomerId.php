@@ -6,7 +6,7 @@ use App\Cache\CacheBase;
 use App\Cache\Traits\WithHelpers;
 use App\Repositories\Contracts\JobOrderRepositoryInterface;
 
-class JobOrdersByCustomerId extends CacheBase
+class JobOrderByCustomerId extends CacheBase
 {
     use WithHelpers;
 

@@ -34,6 +34,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'name',
     'username',
     'email',
+    'mobile',
+    'address',
     'phone',
     'password',
     'role',

@@ -614,6 +614,15 @@ class ServiceSeeder extends Seeder
                 'price' => 1.00,
                 'active' => true,
             ],
+
+
+            //Service Fee
+            [
+                'name' => 'Service Fee',
+                'description' => null,
+                'price' => 1.00,
+                'active' => true,
+            ],
         ];
 
         foreach ($services as $service) {
